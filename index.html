@@ -21,6 +21,7 @@
                         <li><a href="#om" class="nav-link">Om</a></li>
                         <li><a href="#langrenn" class="nav-link">Langrenn</a></li>
                         <li><a href="#strikking" class="nav-link">Strikking</a></li>
+                        <li><button id="fun-button" class="nav-link fun-button" title="Aktiver moro-modus!">🎉 Moro</button></li>
                     </ul>
                 </div>
             </nav>
@@ -180,37 +181,392 @@
         </footer>
     </div>
 
+    <!-- Notification System for Error/Success Messages -->
+    <div id="notification-container" class="notification-container"></div>
+
     <script>
-        // Smooth scroll with performance optimization (Doherty Threshold - <400ms)
+        // Notification System for Error Messages
+        const NotificationManager = {
+            container: null,
+            
+            init() {
+                this.container = document.getElementById('notification-container');
+                if (!this.container) {
+                    console.error('Feil: Notification container ikke funnet');
+                    return false;
+                }
+                return true;
+            },
+            
+            show(message, type = 'info', duration = 5000) {
+                if (!this.container && !this.init()) {
+                    console.error('Feil: Kan ikke vise melding - container mangler');
+                    return;
+                }
+                
+                const notification = document.createElement('div');
+                notification.className = `notification notification-${type}`;
+                
+                const icon = this.getIcon(type);
+                notification.innerHTML = `
+                    <span class="notification-icon">${icon}</span>
+                    <span class="notification-message">${message}</span>
+                    <button class="notification-close" aria-label="Lukk melding">&times;</button>
+                `;
+                
+                this.container.appendChild(notification);
+                
+                // Animate in
+                setTimeout(() => notification.classList.add('show'), 10);
+                
+                // Close button
+                const closeBtn = notification.querySelector('.notification-close');
+                closeBtn.addEventListener('click', () => this.remove(notification));
+                
+                // Auto remove
+                if (duration > 0) {
+                    setTimeout(() => this.remove(notification), duration);
+                }
+            },
+            
+            getIcon(type) {
+                const icons = {
+                    'success': '✓',
+                    'error': '✕',
+                    'warning': '⚠',
+                    'info': 'ℹ'
+                };
+                return icons[type] || icons.info;
+            },
+            
+            remove(notification) {
+                notification.classList.remove('show');
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }
+        };
+        
+        // Initialize notification system
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => NotificationManager.init());
+        } else {
+            NotificationManager.init();
+        }
+        
+        // Smooth scroll with error handling
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
                 e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
+                const targetId = this.getAttribute('href');
+                const target = document.querySelector(targetId);
+                
                 if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
+                    try {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    } catch (error) {
+                        console.error('Feil ved scrolling:', error);
+                        NotificationManager.show('Kunne ikke navigere til seksjonen', 'error');
+                    }
+                } else {
+                    console.error(`Feil: Seksjon ${targetId} ikke funnet`);
+                    NotificationManager.show(`Seksjon ${targetId} eksisterer ikke`, 'error');
                 }
             });
         });
 
-        // Add scroll animation with requestAnimationFrame for performance
+        // Add scroll animation with error handling
         const observerOptions = {
             threshold: 0.1,
             rootMargin: '0px 0px -100px 0px'
         };
 
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('visible');
-                }
-            });
-        }, observerOptions);
+        try {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, observerOptions);
 
-        document.querySelectorAll('.section').forEach(section => {
-            observer.observe(section);
+            document.querySelectorAll('.section').forEach(section => {
+                observer.observe(section);
+            });
+        } catch (error) {
+            console.error('Feil ved initialisering av scroll-animasjon:', error);
+            // Fallback: Show all sections immediately if observer fails
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.add('visible');
+            });
+        }
+        
+        // Check for external resources and show warnings if they fail
+        window.addEventListener('error', function(e) {
+            if (e.target.tagName === 'LINK' || e.target.tagName === 'SCRIPT') {
+                const resourceName = e.target.href || e.target.src;
+                console.error('Feil ved lasting av ressurs:', resourceName);
+                NotificationManager.show('Noen ressurser kunne ikke lastes. Siden kan se annerledes ut.', 'warning');
+            }
+        }, true);
+        
+        // Show welcome message when page loads successfully
+        window.addEventListener('load', function() {
+            // Check if running on GitHub Pages
+            if (window.location.hostname.includes('github.io')) {
+                console.log('Siden kjører på GitHub Pages ✓');
+            }
+        });
+        
+        // Handle offline/online status
+        window.addEventListener('offline', function() {
+            NotificationManager.show('Du er frakoblet internett. Noen funksjoner kan være utilgjengelige.', 'warning', 0);
+        });
+        
+        window.addEventListener('online', function() {
+            NotificationManager.show('Du er tilbake online!', 'success');
+        });
+        
+        // Fun Mode - Toggle various animations and effects
+        const FunMode = {
+            isActive: false,
+            currentEffect: 0,
+            effects: [
+                {
+                    name: 'Rainbow Gradients',
+                    emoji: '🌈',
+                    activate: function() {
+                        document.body.classList.add('fun-rainbow');
+                    },
+                    deactivate: function() {
+                        document.body.classList.remove('fun-rainbow');
+                    }
+                },
+                {
+                    name: 'Rotation Animation',
+                    emoji: '🔄',
+                    activate: function() {
+                        document.querySelectorAll('.card-icon').forEach(icon => {
+                            icon.classList.add('fun-rotate');
+                        });
+                        document.querySelectorAll('.story-card').forEach(card => {
+                            card.classList.add('fun-wobble');
+                        });
+                    },
+                    deactivate: function() {
+                        document.querySelectorAll('.card-icon').forEach(icon => {
+                            icon.classList.remove('fun-rotate');
+                        });
+                        document.querySelectorAll('.story-card').forEach(card => {
+                            card.classList.remove('fun-wobble');
+                        });
+                    }
+                },
+                {
+                    name: 'Bounce Effect',
+                    emoji: '⚡',
+                    activate: function() {
+                        document.querySelectorAll('.story-card, .highlight-card').forEach(card => {
+                            card.classList.add('fun-bounce');
+                        });
+                    },
+                    deactivate: function() {
+                        document.querySelectorAll('.story-card, .highlight-card').forEach(card => {
+                            card.classList.remove('fun-bounce');
+                        });
+                    }
+                },
+                {
+                    name: 'Color Shift',
+                    emoji: '🎨',
+                    activate: function() {
+                        document.body.classList.add('fun-color-shift');
+                    },
+                    deactivate: function() {
+                        document.body.classList.remove('fun-color-shift');
+                    }
+                },
+                {
+                    name: 'Party Mode',
+                    emoji: '🎉',
+                    activate: function() {
+                        document.body.classList.add('fun-party');
+                        // Create confetti effect
+                        this.createConfetti();
+                    },
+                    deactivate: function() {
+                        document.body.classList.remove('fun-party');
+                        document.querySelectorAll('.confetti').forEach(c => c.remove());
+                    },
+                    createConfetti: function() {
+                        const colors = ['#667eea', '#764ba2', '#fbbf24', '#10b981', '#ef4444', '#3b82f6'];
+                        for (let i = 0; i < 30; i++) {
+                            const confetti = document.createElement('div');
+                            confetti.className = 'confetti';
+                            confetti.style.left = Math.random() * 100 + '%';
+                            confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                            confetti.style.animationDelay = Math.random() * 3 + 's';
+                            confetti.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                            document.body.appendChild(confetti);
+                        }
+                    }
+                },
+                {
+                    name: 'Scale Pulse',
+                    emoji: '💫',
+                    activate: function() {
+                        document.querySelectorAll('.hero-title, .section-title').forEach(title => {
+                            title.classList.add('fun-pulse');
+                        });
+                    },
+                    deactivate: function() {
+                        document.querySelectorAll('.hero-title, .section-title').forEach(title => {
+                            title.classList.remove('fun-pulse');
+                        });
+                    }
+                },
+                {
+                    name: 'Anime Zoom',
+                    emoji: '⭐',
+                    activate: function() {
+                        document.body.classList.add('fun-anime-zoom');
+                        document.querySelectorAll('.story-card').forEach((card, index) => {
+                            card.style.animationDelay = `${index * 0.1}s`;
+                            card.classList.add('fun-zoom-in');
+                        });
+                    },
+                    deactivate: function() {
+                        document.body.classList.remove('fun-anime-zoom');
+                        document.querySelectorAll('.story-card').forEach(card => {
+                            card.classList.remove('fun-zoom-in');
+                            card.style.animationDelay = '';
+                        });
+                    }
+                },
+                {
+                    name: 'Glitch Effect',
+                    emoji: '⚡',
+                    activate: function() {
+                        document.querySelectorAll('.hero-title, .section-title').forEach(title => {
+                            title.classList.add('fun-glitch');
+                        });
+                    },
+                    deactivate: function() {
+                        document.querySelectorAll('.hero-title, .section-title').forEach(title => {
+                            title.classList.remove('fun-glitch');
+                        });
+                    }
+                },
+                {
+                    name: 'Neon Glow',
+                    emoji: '✨',
+                    activate: function() {
+                        document.body.classList.add('fun-neon');
+                        document.querySelectorAll('.nav-link, .cta-button').forEach(el => {
+                            el.classList.add('fun-neon-glow');
+                        });
+                    },
+                    deactivate: function() {
+                        document.body.classList.remove('fun-neon');
+                        document.querySelectorAll('.nav-link, .cta-button').forEach(el => {
+                            el.classList.remove('fun-neon-glow');
+                        });
+                    }
+                },
+                {
+                    name: 'Matrix Rain',
+                    emoji: '💚',
+                    activate: function() {
+                        document.body.classList.add('fun-matrix');
+                        this.createMatrixRain();
+                    },
+                    deactivate: function() {
+                        document.body.classList.remove('fun-matrix');
+                        document.querySelectorAll('.matrix-rain').forEach(m => m.remove());
+                    },
+                    createMatrixRain: function() {
+                        const matrixChars = '01アイウエオカキクケコサシスセソタチツテト';
+                        const container = document.createElement('div');
+                        container.className = 'matrix-rain';
+                        
+                        for (let i = 0; i < 20; i++) {
+                            const column = document.createElement('div');
+                            column.className = 'matrix-column';
+                            column.style.left = `${i * 5}%`;
+                            column.style.animationDelay = `${Math.random() * 2}s`;
+                            column.textContent = matrixChars[Math.floor(Math.random() * matrixChars.length)];
+                            container.appendChild(column);
+                        }
+                        
+                        document.body.appendChild(container);
+                    }
+                },
+                {
+                    name: 'Shake Effect',
+                    emoji: '🌊',
+                    activate: function() {
+                        document.querySelectorAll('.story-card, .badge').forEach((el, index) => {
+                            el.style.animationDelay = `${index * 0.05}s`;
+                            el.classList.add('fun-shake');
+                        });
+                    },
+                    deactivate: function() {
+                        document.querySelectorAll('.story-card, .badge').forEach(el => {
+                            el.classList.remove('fun-shake');
+                            el.style.animationDelay = '';
+                        });
+                    }
+                }
+            ],
+            
+            toggle: function() {
+                const button = document.getElementById('fun-button');
+                
+                if (!this.isActive) {
+                    // Activate fun mode
+                    this.isActive = true;
+                    this.activateEffect(0);
+                    button.textContent = `${this.effects[0].emoji} ${this.effects[0].name}`;
+                    button.classList.add('fun-active');
+                    NotificationManager.show('Moro-modus aktivert! Klikk igjen for å bytte effekt! 🎉', 'success');
+                } else {
+                    // Cycle to next effect
+                    this.effects[this.currentEffect].deactivate();
+                    this.currentEffect = (this.currentEffect + 1) % this.effects.length;
+                    
+                    if (this.currentEffect === 0) {
+                        // Cycled back to start - deactivate
+                        this.isActive = false;
+                        button.textContent = '🎉 Moro';
+                        button.classList.remove('fun-active');
+                        NotificationManager.show('Moro-modus deaktivert', 'info');
+                    } else {
+                        this.activateEffect(this.currentEffect);
+                        button.textContent = `${this.effects[this.currentEffect].emoji} ${this.effects[this.currentEffect].name}`;
+                        NotificationManager.show(`Effekt: ${this.effects[this.currentEffect].name}`, 'info');
+                    }
+                }
+            },
+            
+            activateEffect: function(index) {
+                this.effects[index].activate();
+            }
+        };
+        
+        // Initialize fun button
+        document.addEventListener('DOMContentLoaded', function() {
+            const funButton = document.getElementById('fun-button');
+            if (funButton) {
+                funButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    FunMode.toggle();
+                });
+            }
         });
     </script>
 </body>
