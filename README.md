@@ -61,6 +61,7 @@ npx serve .
 - ✅ Feilhåndtering og brukervennlige feilmeldinger
 - ✅ Offline/online status-varsling
 - ✅ Accessibility (tilgjengelighet) med ARIA-labels
+- ✅ **Morro-modus** - Interaktiv animasjonsknapp med 11 forskjellige effekter (Rainbow Gradients, Rotation, Bounce, Color Shift, Party Mode, Scale Pulse, Anime Zoom, Glitch, Neon Glow, Matrix Rain, Shake)
 
 ## 🔧 Teknologi
 
