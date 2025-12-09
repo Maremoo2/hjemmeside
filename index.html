@@ -21,7 +21,7 @@
                         <li><a href="#om" class="nav-link">Om</a></li>
                         <li><a href="#langrenn" class="nav-link">Langrenn</a></li>
                         <li><a href="#strikking" class="nav-link">Strikking</a></li>
-                        <li><button id="fun-button" class="nav-link fun-button" title="Aktiver moro-modus!">🎉 Moro</button></li>
+                        <li><button type="button" id="fun-button" class="nav-link fun-button" title="Aktiver moro-modus!">🎉 Moro</button></li>
                     </ul>
                 </div>
             </nav>
@@ -211,7 +211,7 @@
                 notification.innerHTML = `
                     <span class="notification-icon">${icon}</span>
                     <span class="notification-message">${message}</span>
-                    <button class="notification-close" aria-label="Lukk melding">&times;</button>
+                    <button type="button" class="notification-close" aria-label="Lukk melding">&times;</button>
                 `;
                 
                 this.container.appendChild(notification);
